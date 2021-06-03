@@ -1,1 +1,22 @@
-ds
+// Directives
+:toc:
+:sectnums:
+
+:hardbreaks:
+
+= Kafka DevOps Feature ENvironment
+
+== Usage
+usage: create-cp-input.py [options]
+
+Reads the feature environment YAML config file; converts it into julieops and cp-ansible inventory
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -f FECONFIG, --feconfig FECONFIG
+                        Feature environment config YAML input file (default = input.yaml)
+  -a ANSIBLETEMPLATE, --ansibletemplate ANSIBLETEMPLATE
+                        Inventory template (default = cpansible.j2)
+  -j JULIETEMPLATE, --julietemplate JULIETEMPLATE
+                        Inventory template (default = julie.j2)
+  -c COMMANDCONFIG, --commandconfig COMMANDCONFIG
