@@ -1,0 +1,36 @@
+name: "fe-id-1"
+description: "feature description/jira-id/whatever"
+connect: 
+  provision: true
+  hosts:
+    - "connect1"
+    - "connect2"
+  connectors: 
+    - "/Users/vnarayanan/_official/docs/WorkLog/04_UWM/connectors/bak/uwm_inbound_email_status_jdbcconnector.stage.config.json"
+    - "/Users/vnarayanan/_official/docs/WorkLog/04_UWM/connectors/bak/uwm_inbound_email_status_jdbcconnector2.stage.config.json"
+  plugins: 
+    hub:
+      - "debezium/debezium-connector-mysql:1.5.0"
+    local:
+      - "local_repo_file_1"
+    remote:
+      - "http_repo_file_1"
+ksql: 
+  provision: true
+  hosts:
+    - "ksql1"
+    - "ksql2"
+  queries: 
+    - "ksql-query-1.ksql"
+    - "ksql-query-2.ksql"
+broker: 
+  dependencies: 
+    - name: "loan_main"
+    - name: "customer_groups"
+  override: 
+    partitions: 2
+    replication: 2
+  topics: 
+    - name: "loans"
+      partitions: 3
+    - name: "uwm_inbound_email"

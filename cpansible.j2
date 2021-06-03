@@ -1,0 +1,113 @@
+{# Copyright 2021 Confluent
+Contributors:
+   Venky Narayanan vnarayanan@confluent.io
+
+ All rights reserved -#}
+{# Template for cp-ansible inventory file -#}
+{# Based on host_example.yml from https://github.com/confluentinc/cp-ansible -#}
+# Automatically created from terraform data on {{timestamp}}
+
+all:
+  vars:
+    ansible_connection: ssh
+    ansible_user: {{ cluster_data.ssh_username}}
+    ansible_become: true
+    ansible_ssh_private_key_file: {{ cluster_data.ssh_key }}
+
+    kafka_connect_custom_properties:
+      bootstrap.servers: {{ bootstrap_servers }}
+      group.id: {{ name }}-connect-cluster
+      value.converter: io.confluent.connect.avro.AvroConverter
+      value.converter.basic.auth.credentials.source: USER_INFO
+      value.converter.schema.registry.basic.auth.user.info: {{ schema_registry.api_key }}:{{ schema_registry.api_secret }}
+      value.converter.schema.registry.url: {{ schema_registry.url }}
+      value.converter.schemas.enable: false
+      key.converter: io.confluent.connect.avro.AvroConverter
+      key.converter.basic.auth.credentials.source: USER_INFO
+      key.converter.schema.registry.basic.auth.user.info: {{ schema_registry.api_key }}:{{ schema_registry.api_secret }}
+      key.converter.schema.registry.url: {{ schema_registry.url }}
+      key.converter.schemas.enable: false
+      offset.storage.topic: {{ name }}-connect-offsets
+      offset.storage.replication.factor: 1
+      offset.storage.partitions: 3
+      config.storage.topic: {{ name }}-connect-configs
+      config.storage.replication.factor: 1
+      config.storage.partitions: 3
+      status.storage.topic: {{ name }}-connect-status
+      status.storage.replication.factor: 1
+      status.storage.partitions: 3
+      offset.flush.interval.ms: 10000
+      ssl.endpoint.identification.algorithm: https
+      sasl.mechanism: PLAIN
+      request.timeout.ms: 20000
+      retry.backoff.ms: 500
+      sasl.jaas.config: org.apache.kafka.common.security.plain.PlainLoginModule required username="{{ connect.api_key }}" password="{{ connect.api_secret }}";
+      security.protocol: SASL_SSL
+      consumer.ssl.endpoint.identification.algorithm: https
+      consumer.sasl.mechanism: PLAIN
+      consumer.request.timeout.ms: 20000
+      consumer.retry.backoff.ms: 500
+      consumer.sasl.jaas.config: org.apache.kafka.common.security.plain.PlainLoginModule required username="{{ consumer.api_key }}" password="{{ consumer.api_secret }}";
+      consumer.security.protocol: SASL_SSL
+      producer.ssl.endpoint.identification.algorithm: https
+      producer.sasl.mechanism: PLAIN
+      producer.request.timeout.ms: 20000
+      producer.retry.backoff.ms: 500
+      producer.sasl.jaas.config: org.apache.kafka.common.security.plain.PlainLoginModule required username="{{ producer.api_key }}" password="{{ producer.api_secret }}";
+      producer.security.protocol: SASL_SSL
+
+    ksql_custom_properties:
+      bootstrap.servers: {{ bootstrap_servers }}
+      ksql.internal.topic.replicas: 3
+      ksql.streams.replication.factor: 3
+      ksql.logging.processing.topic.replication.factor: 3
+      listeners: http://0.0.0.0:8088
+      security.protocol: SASL_SSL
+      sasl.mechanism: PLAIN
+      sasl.jaas.config: org.apache.kafka.common.security.plain.PlainLoginModule required username="{{ ksql.api_key }}" password="{{ ksql.api_secret }}";
+      ksql.schema.registry.basic.auth.credentials.source: USER_INFO
+      ksql.schema.registry.basic.auth.user.info: {{ schema_registry.api_key }}:{{ schema_registry.api_secret }}
+      ksql.schema.registry.url: {{ schema_registry.url }}
+
+    kafka_connect_connectors:
+      {% for item in connect_connectors_json -%}
+      - name: {{ item.name }}
+        config:
+          {% for item2 in item.config -%}
+          {{ item2 }}
+          {% endfor %}
+      {% endfor %}
+
+ksql:
+  vars:
+    ksql_copy_files:
+      {# TODO Query File Source and Destination #}
+      {# TODO set queries in command line #}
+  hosts:
+    {% for item in ksql_hosts -%}
+    {{ item }}:
+    {% endfor %}
+  queries:
+    {% for item in ksql_queries -%}
+    {{ item }}:
+    {% endfor %}
+
+kafka_connect:
+  vars:
+    kafka_connect_confluent_hub_plugins:
+      {% for item in connect_plugins_hub -%}
+      - {{ item }}
+      {% endfor %}
+    kafka_connect_plugins:
+      {% for item in connect_plugins_local -%}
+      - {{ item }}
+      {% endfor %}
+    kafka_connect_plugins_remote:
+      {% for item in connect_plugins_remote -%}
+      - {{ item }}
+      {% endfor %}
+
+  hosts:
+    {% for item in connect_hosts -%}
+    {{ item }}:
+    {% endfor %}
