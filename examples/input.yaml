@@ -24,13 +24,14 @@ ksql:
     - "ksql-query-1.ksql"
     - "ksql-query-2.ksql"
 broker: 
-  dependencies: 
-    - name: "loan_main"
-    - name: "customer_groups"
-  override: 
-    partitions: 2
-    replication: 2
-  topics: 
-    - name: "loans"
-      partitions: 3
-    - name: "uwm_inbound_email"
+  topic:
+    override: 
+      partitions: 2
+      replication: 2
+    dependencies: 
+      - name: "loan_main"
+      - name: "customer_groups"
+    topics: 
+      - name: "loans"
+        partitions: 3
+      - name: "uwm_inbound_email"

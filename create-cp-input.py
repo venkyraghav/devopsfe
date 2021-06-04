@@ -26,6 +26,7 @@ CONST_OVERRIDE = 'override'
 CONST_DEPENDENCIES = 'dependencies'
 CONST_KSQL = 'ksql'
 CONST_CONNECT = 'connect'
+CONST_TOPIC = 'topic'
 CONST_TOPICS = 'topics'
 CONST_BROKER = 'broker'
 CONST_PROVISION = 'provision'
@@ -92,8 +93,8 @@ def process_topic_item (feid, topic_item, override_part, override_repl, output_f
 # Create Julieops descriptor file
 def process_broker (feid, doc, output_file, template_julie):
     logging.debug ('-------')
-    if CONST_OVERRIDE in doc:
-        override = doc[CONST_OVERRIDE]
+    if CONST_OVERRIDE in doc[CONST_TOPIC]:
+        override = doc[CONST_TOPIC][CONST_OVERRIDE]
         if CONST_PARTITIONS in override:
             override_part = override[CONST_PARTITIONS]
         
@@ -102,17 +103,17 @@ def process_broker (feid, doc, output_file, template_julie):
 
         logging.info ('partition = ' + str(override_part) + ', replication = ' + str(override_repl))
 
-    if CONST_DEPENDENCIES not in doc:
+    if CONST_DEPENDENCIES not in doc[CONST_TOPIC]:
         logging.info ('No dependency topics')
 
-    for dependency in doc[CONST_DEPENDENCIES]:
+    for dependency in doc[CONST_TOPIC][CONST_DEPENDENCIES]:
         process_topic_item (feid, dependency, override_part, override_repl, output_file)
 
-    if CONST_TOPICS not in doc:
+    if CONST_TOPICS not in doc[CONST_TOPIC]:
         logging.info ('No topics to provision')
         return
 
-    topics = doc[CONST_TOPICS]
+    topics = doc[CONST_TOPIC][CONST_TOPICS]
     for topic in topics:
         process_topic_item (feid, topic, override_part, override_repl, output_file)
     

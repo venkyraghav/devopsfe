@@ -6,6 +6,48 @@
 
 = Kafka DevOps Feature Environment
 
+== Requirements
+
+. Install `python3`
+. Install `pip3`
+. Install python3 modules using `pip3`
++
+----
+pip3 -install -r requirements.txt
+----
+
+== Configuration Files
+
+. Jinja2 Template Files
+.. Pre-configured jinja2 template file for julieops. Refer `./julie.j2`
+.. Pre-configured jinja2 template file for cp-ansible. Refer `./cpansible.j2`
+. Command configuration. Refer `./examples/cloud.yaml` to connect to Kafka Cluster
+
+== Input File
+
+. Create a yaml file with following elements. Refer `./examples/input.yaml`
+
+|===
+|Name|Description
+|name|Feature ID
+|description|Feature Description
+|connect.provision|Provision Connect Cluster
+|connect.hosts|List of Connect Hosts
+|connect.connectors|Lists of Connectors sourced from JSON configuration file
+|connect.plugins.hub|List of Connect Plugins to Download from Confluent Hub
+|connect.plugins.local|List of Connect Plugins to Download from local file system
+|connect.plugins.remote|List of Connect Plugins to Download from HTTP endppint
+|ksql.provision|Provision KSQL Cluster
+|ksql.hosts|List of KSQL Hosts
+|ksql.queries|List of KSQL Queries sourced from the query file
+|broker.topic.overrides.replication|To be used if replication factor not configured for topic
+|broker.topic.overrides.partitions|To be used if partitions not configured for topic
+|broker.topic.topics.name|List of topics to be created
+|broker.topic.topics.replication|Use replication factor. Default is 1
+|broker.topic.topics.partitions|Use Partitions. Default is 1
+|broker.topic.dependencies|List of dependent topics. Already provisioned
+|===
+
 == Usage
 
 ----
@@ -22,4 +64,5 @@ optional arguments:
   -j JULIETEMPLATE, --julietemplate JULIETEMPLATE
                         Inventory template (default = julie.j2)
   -c COMMANDCONFIG, --commandconfig COMMANDCONFIG
+                        Command Config (default = ccloud.yaml)
 ----
