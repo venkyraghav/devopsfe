@@ -28,7 +28,7 @@ pip3 -install -r requirements.txt
 . Create a yaml file with following elements. Refer `./examples/input.yaml`
 
 |===
-|Name|Description
+| **Name** | **Description**
 |name|Feature ID
 |description|Feature Description
 |connect.provision|Provision Connect Cluster

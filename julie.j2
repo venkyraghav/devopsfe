@@ -7,18 +7,18 @@ Contributors:
 {# Based on blah blah from blah -#}
 # Automatically created on {{ timestamp }}
 
-context: "{{ context }}"
-company: "{{ company }}"
-env: "{{ env }}"
-source: "{{ source }}"
+# context: {{ context }}
+# company: {{ company }}
+env: {{ env }}
+# source: {{ source }}
 projects:
   {% for item in projects -%}
-  - name: "{{ item.name }}"
+  - name: {{ item.name }}
     topics:
       {% for topic in item.topics -%}
-      - name: "{{ topic.name }}"
+      - name: {{ topic.name }}
         config:
-          replication.factor: "{{ topic.replication_factor }}"
-          num.partitions: "{{ topic.partitions }}"
+          replication.factor: {{ topic.replication }}
+          num.partitions: {{ topic.partitions }}
       {% endfor %}
-    {% endfor %}
+  {% endfor %}

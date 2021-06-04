@@ -45,11 +45,13 @@ CONST_SSH_KEY = 'ssh_key'
 CONST_BOOTSTRAP_SERVERS = 'bootstrap_servers'
 CONST_API_KEY = 'api_key'
 CONST_API_SECRET = 'api_secret'
+CONST_ADMIN = 'admin'
 CONST_CONSUMER = 'consumer'
 CONST_PRODUCER = 'producer'
 CONST_SR = 'schema_registry'
 CONST_KSQL = 'ksql'
 CONST_URL = 'url'
+CONST_CREDENTIALS = 'credentials'
 
 CONST_ENV = 'env'
 CONST_CONTEXT = 'context'
@@ -57,7 +59,7 @@ CONST_COMPANY = 'company'
 CONST_PROJECTS = 'projects'
 CONST_SOURCE = 'source'
 
-inputs_map = {CONST_TIMESTAMP: '', CONST_CONTEXT: '', CONST_COMPANY: '', CONST_ENV: '', CONST_SOURCE: '', CONST_PROJECTS: {}, CONST_BOOTSTRAP_SERVERS: '', CONST_CONNECT: [], CONST_CONSUMER: [], CONST_PRODUCER: [], CONST_CLUSTERDATA: {CONST_SSH_USER: 'TODO', CONST_SSH_KEY: 'TODO'}, CONST_KSQL + '_' + CONST_QUERIES: [], CONST_KSQL + '_' + CONST_HOSTS: [], CONST_CONNECT + '_' + CONST_HOSTS: [], CONST_CONNECT + '_' + CONST_CONNECTORS: [], CONST_CONNECT + '_' + CONST_PLUGINS: []}
+inputs_map = {CONST_TIMESTAMP: '', CONST_CONTEXT: 'test_context', CONST_COMPANY: 'test_company', CONST_ENV: 'test_env', CONST_SOURCE: 'test_source', CONST_PROJECTS: [], CONST_BOOTSTRAP_SERVERS: '', CONST_CONNECT: [], CONST_CONSUMER: [], CONST_PRODUCER: [], CONST_CLUSTERDATA: {CONST_SSH_USER: 'TODO', CONST_SSH_KEY: 'TODO'}, CONST_KSQL + '_' + CONST_QUERIES: [], CONST_KSQL + '_' + CONST_HOSTS: [], CONST_CONNECT + '_' + CONST_HOSTS: [], CONST_CONNECT + '_' + CONST_CONNECTORS: [], CONST_CONNECT + '_' + CONST_PLUGINS: []}
 
 def create_template(temp_file):
     with open(temp_file) as f:
@@ -65,15 +67,15 @@ def create_template(temp_file):
     f.close()
     return Template(temp)
 
-def print_hosts(template, ip_dict, output_file):
+def render_template (input_map, input_template, output_file):
     with open(output_file, "w+") as f:
-        print(template.render(ip_dict), file=f)
+        print (input_template.render(input_map), file=f)
     f.close()
 
 # Identify topic name, replication factor, and partitions by topic
-def process_topic_item (feid, topic_item, override_part, override_repl, output_file):
+def process_topic_item (feid, project, topic_item, override_part, override_repl):
     name = topic_item[CONST_NAME]
-    fqname = feid + "." + name
+    fqname = name
     if CONST_PARTITIONS in topic_item:
         use_part = topic_item[CONST_PARTITIONS]
     elif override_part != 0:
@@ -88,12 +90,16 @@ def process_topic_item (feid, topic_item, override_part, override_repl, output_f
     else:
         use_repl = 1
 
-    logging.debug ('REPLACE with Topic creation script Topic ' + fqname + ', Partitions = ' + str(use_part) + ', Replication = ' + str(use_repl))
+    topic = {}
+    topic [CONST_NAME] = fqname
+    topic [CONST_REPLICATION] = use_repl
+    topic [CONST_PARTITIONS] = use_part
+    return topic
 
 # Create Julieops descriptor file
-def process_broker (feid, doc, output_file, template_julie):
+def process_broker (feid, doc):
     logging.debug ('-------')
-    if CONST_OVERRIDE in doc[CONST_TOPIC]:
+    if CONST_TOPIC in doc and CONST_OVERRIDE in doc[CONST_TOPIC]:
         override = doc[CONST_TOPIC][CONST_OVERRIDE]
         if CONST_PARTITIONS in override:
             override_part = override[CONST_PARTITIONS]
@@ -107,17 +113,26 @@ def process_broker (feid, doc, output_file, template_julie):
         logging.info ('No dependency topics')
 
     for dependency in doc[CONST_TOPIC][CONST_DEPENDENCIES]:
-        process_topic_item (feid, dependency, override_part, override_repl, output_file)
+        process_topic_item (feid, feid, dependency, override_part, override_repl)
 
     if CONST_TOPICS not in doc[CONST_TOPIC]:
         logging.info ('No topics to provision')
         return
 
-    topics = doc[CONST_TOPIC][CONST_TOPICS]
-    for topic in topics:
-        process_topic_item (feid, topic, override_part, override_repl, output_file)
-    
-    logging.debug ('-------')
+    topics = []
+    lists = doc[CONST_TOPIC][CONST_TOPICS]
+    for item in lists:
+        topic = process_topic_item (feid, feid, item, override_part, override_repl)
+        topics.append(topic)
+        logging.debug(topic)
+
+    projects = []
+    project = {}
+    project[CONST_NAME] = feid
+    project[CONST_TOPICS] = topics
+    projects.append(project)
+
+    inputs_map[CONST_PROJECTS] = projects
 
 def provision_ksql_query (feid, doc):
     queries = []
@@ -193,38 +208,55 @@ def process (doc, args):
 
     output_ansible = fe_id + ".ansible.yaml"
     output_julie = fe_id + ".julieops.yaml"
+    output_cluster = fe_id + ".cluster.properties"
     template_ansible = create_template (args.ansibletemplate)
     template_julie = create_template (args.julietemplate)
+    template_cluster = create_template (args.brokertemplate)
 
     logging.info("Feature name is " + fe_id)
     logging.info("Ansible YAML is " + output_ansible + ", Template is " + args.ansibletemplate)
     logging.info("Julieops YAML is " + output_julie + ", Template is " + args.julietemplate)
     
-    process_broker  (doc[CONST_NAME], doc[CONST_BROKER], output_julie, template_julie)
+    process_broker  (doc[CONST_NAME], doc[CONST_BROKER])
     process_ksql    (doc[CONST_NAME], doc[CONST_KSQL])
     process_connect (doc[CONST_NAME], doc[CONST_CONNECT])
 
     render_template (inputs_map, template_ansible, output_ansible)
     render_template (inputs_map, template_julie, output_julie)
+    render_template (inputs_map, template_cluster, output_cluster)
 
-def render_template (input_map, input_template, output_file):
-    with open(output_file, "w+") as f:
-        print (input_template.render(input_map), file=f)
-    f.close()
-
-def get_api_config(docs):
+def get_api_config(docs, config_type, override_apikey, override_apisecret):
     newdocs = {}
-    newdocs[CONST_API_KEY] = docs[CONST_API_KEY]
-    newdocs[CONST_API_SECRET] = docs[CONST_API_SECRET]
+    if config_type in docs and CONST_API_KEY in docs[config_type]:
+        newdocs[CONST_API_KEY] = docs[config_type][CONST_API_KEY]
+        newdocs[CONST_API_SECRET] = docs[config_type][CONST_API_SECRET]
+    else:
+        newdocs[CONST_API_KEY] = override_apikey
+        newdocs[CONST_API_SECRET] = override_apisecret
+    
     return newdocs
 
 def process_ccloud_config (docs):
+    override_apikey = ""
+    override_apisecret = ""
+
+    if CONST_OVERRIDE in docs[CONST_CREDENTIALS]:
+        override = docs[CONST_CREDENTIALS][CONST_OVERRIDE]
+        if CONST_API_KEY in override:
+            override_apikey = override[CONST_API_KEY]
+        
+        if CONST_API_SECRET in override:
+            override_apisecret = override[CONST_API_SECRET]
+
+        logging.info ('REMOVE THIS api key = ' + str(override_apikey) + ', secret = ' + str(override_apisecret))
+
     inputs_map[CONST_BOOTSTRAP_SERVERS] = docs[CONST_BOOTSTRAP_SERVERS]
-    inputs_map[CONST_CONNECT] = get_api_config (docs[CONST_CONNECT])
-    inputs_map[CONST_CONSUMER] = get_api_config (docs[CONST_CONSUMER])
-    inputs_map[CONST_PRODUCER] = get_api_config (docs[CONST_PRODUCER])
-    inputs_map[CONST_KSQL] = get_api_config (docs[CONST_KSQL])
-    inputs_map[CONST_SR] = get_api_config (docs[CONST_SR])
+    inputs_map[CONST_ADMIN] = get_api_config (docs[CONST_CREDENTIALS], CONST_ADMIN, override_apikey, override_apisecret)
+    inputs_map[CONST_CONNECT] = get_api_config (docs[CONST_CREDENTIALS], CONST_CONNECT, override_apikey, override_apisecret)
+    inputs_map[CONST_CONSUMER] = get_api_config (docs[CONST_CREDENTIALS], CONST_CONSUMER, override_apikey, override_apisecret)
+    inputs_map[CONST_PRODUCER] = get_api_config (docs[CONST_CREDENTIALS], CONST_PRODUCER, override_apikey, override_apisecret)
+    inputs_map[CONST_KSQL] = get_api_config (docs[CONST_CREDENTIALS], CONST_KSQL, override_apikey, override_apisecret)
+    inputs_map[CONST_SR] = get_api_config (docs[CONST_CREDENTIALS], CONST_SR, override_apikey, override_apisecret)
     inputs_map[CONST_SR][CONST_URL] = docs[CONST_SR][CONST_URL]
 
 def do_process(args):
@@ -258,6 +290,7 @@ def parse_arguments():
     parser.add_argument("-f", "--feconfig", help="Feature environment config YAML input file (default = input.yaml)", default="./input.yaml")
     parser.add_argument("-a", "--ansibletemplate", help="Inventory template (default = cpansible.j2)", default="./cpansible.j2")
     parser.add_argument("-j", "--julietemplate", help="Inventory template (default = julie.j2)", default="./julie.j2")
+    parser.add_argument("-b", "--brokertemplate", help="Broker Config template (default = julie-cluster.j2)", default="./julie-cluster.j2")
     parser.add_argument("-c", "--commandconfig", help="Command Config (default = ccloud.yaml)", default="./ccloud.yaml")
 
     return parser.parse_args()

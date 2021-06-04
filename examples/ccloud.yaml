@@ -1,17 +1,25 @@
 bootstrap_servers: cloud-bootstrap-servers
-connect:
-  api_key: api-key-1
-  api_secret: api-secret-1
-consumer:
-  api_key: api-key-2
-  api_secret: api-secret-2
-producer:
-  api_key: api-key-3
-  api_secret: api-secret-3
 schema_registry:
-  url: "sr_url"
-  api_key: api-key-4
-  api_secret: api-secret-4
-ksql:
-  api_key: api-key-5
-  api_secret: api-secret-5
+    url: "sr_url"
+credentials:
+  override:
+    api_key: api-key-A
+    api_secret: api-secret-A
+  admin:
+    api_key: api-key-0
+    api_secret: api-secret-0
+  connect:
+    api_key: api-key-1
+    api_secret: api-secret-1
+  consumer:
+    api_key: api-key-2
+    api_secret: api-secret-2
+  producer:
+    api_key: api-key-3
+    api_secret: api-secret-3
+  schema_registry:
+    api_key: api-key-4
+    api_secret: api-secret-4
+  ksql:
+    api_key: api-key-5
+    api_secret: api-secret-5
