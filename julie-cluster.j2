@@ -13,3 +13,7 @@ sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule require
 schema.registry.basic.auth.credentials.source=USER_INFO
 schema.registry.basic.auth.user.info={{ schema_registry.api_key }}:{{ schema_registry.api_secret }}
 schema.registry.url={{ schema_registry.url }}
+
+topology.project.prefix.format=
+topology.topic.prefix.separator=.
+topology.topic.prefix.format={% raw %}{{project}}.{{topic}}{% endraw %}

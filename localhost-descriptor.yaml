@@ -1,0 +1,19 @@
+# Automatically created on 2021-06-04 17:58:59.426088
+
+context: fe
+# company: test_company
+# env: test_env
+# source: test_source
+projects:
+  - name: fe-id-1
+    topics:
+      - name: loans
+        config:
+          replication.factor: 1
+          num.partitions: 3
+      - name: uwm_inbound_email
+        config:
+          replication.factor: 1
+          num.partitions: 2
+      
+  
