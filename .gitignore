@@ -129,4 +129,4 @@ dmypy.json
 .pyre/
 
 fe-id-1.*
-
+*.ksql

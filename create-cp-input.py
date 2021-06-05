@@ -17,6 +17,7 @@ import yaml
 import json
 import logging
 import requests
+import os
 
 CONST_TIMESTAMP = 'timestamp'
 CONST_NAME = 'name'
@@ -41,6 +42,9 @@ CONST_PLUGINS_REMOTE = 'remote'
 CONST_CLUSTERDATA = 'cluster_data'
 CONST_SSH_USER = 'ssh_username'
 CONST_SSH_KEY = 'ssh_key'
+CONST_KSQL_DEST_DIR = '/var/lib/kafka/ksql'
+CONST_SOURCE_PATH = 'source_path'
+CONST_DEST_PATH = 'destination_path'
 
 CONST_BOOTSTRAP_SERVERS = 'bootstrap_servers'
 CONST_API_KEY = 'api_key'
@@ -135,11 +139,13 @@ def process_broker (feid, doc):
     inputs_map[CONST_PROJECTS] = projects
 
 def provision_ksql_query (feid, doc):
-    queries = []
-    for query in doc:
-        logging.info ('TODO May need to copy the query file to hosts ' + query)
-        queries.append(query)
-    inputs_map[CONST_KSQL + '_' + CONST_QUERIES] = queries
+    ksql_files = []
+    for query_file in doc:
+        ksql_file = {}
+        ksql_file[CONST_SOURCE_PATH] = query_file
+        ksql_file[CONST_DEST_PATH] = CONST_KSQL_DEST_DIR + os.path.sep + os.path.basename(query_file)
+        ksql_files.append(ksql_file)
+    inputs_map[CONST_KSQL + '_' + CONST_QUERIES] = ksql_files
 
 def provision_ksql_hosts (feid, doc):
     hosts = []
@@ -248,7 +254,7 @@ def process_ccloud_config (docs):
         if CONST_API_SECRET in override:
             override_apisecret = override[CONST_API_SECRET]
 
-        logging.info ('REMOVE THIS api key = ' + str(override_apikey) + ', secret = ' + str(override_apisecret))
+        logging.debug ('REMOVE THIS api key = ' + str(override_apikey) + ', secret = ' + str(override_apisecret))
 
     inputs_map[CONST_BOOTSTRAP_SERVERS] = docs[CONST_BOOTSTRAP_SERVERS]
     inputs_map[CONST_ADMIN] = get_api_config (docs[CONST_CREDENTIALS], CONST_ADMIN, override_apikey, override_apisecret)

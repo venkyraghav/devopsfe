@@ -58,6 +58,7 @@ all:
 
     ksql_custom_properties:
       bootstrap.servers: {{ bootstrap_servers }}
+      ksql.service.id: {{ name }}.ksql
       ksql.internal.topic.replicas: 3
       ksql.streams.replication.factor: 3
       ksql.logging.processing.topic.replication.factor: 3
@@ -68,6 +69,7 @@ all:
       ksql.schema.registry.basic.auth.credentials.source: USER_INFO
       ksql.schema.registry.basic.auth.user.info: {{ schema_registry.api_key }}:{{ schema_registry.api_secret }}
       ksql.schema.registry.url: {{ schema_registry.url }}
+      ksql.queries.file: {{ ksql_queries }}
 
     kafka_connect_connectors:
       {% for item in connect_connectors_json -%}
@@ -81,14 +83,13 @@ all:
 ksql:
   vars:
     ksql_copy_files:
-      {# TODO Query File Source and Destination #}
-      {# TODO set queries in command line #}
+      {% for item in ksql_queries -%}
+      - source_path: {{ item.source_path }}
+        destination_path: {{ item.destination_path }}
+      {% endfor %}
+
   hosts:
     {% for item in ksql_hosts -%}
-    {{ item }}:
-    {% endfor %}
-  queries:
-    {% for item in ksql_queries -%}
     {{ item }}:
     {% endfor %}
 
