@@ -10,6 +10,6 @@ Contributors:
 security.protocol=SASL_SSL
 sasl.mechanism=PLAIN
 sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username="{{ admin.api_key }}" password="{{ admin.api_key }}";
-schema.registry.basic.auth.credentials.source= USER_INFO
-schema.registry.basic.auth.user.info= {{ schema_registry.api_key }}:{{ schema_registry.api_secret }}
-schema.registry.url= {{ schema_registry.url }}
+schema.registry.basic.auth.credentials.source=USER_INFO
+schema.registry.basic.auth.user.info={{ schema_registry.api_key }}:{{ schema_registry.api_secret }}
+schema.registry.url={{ schema_registry.url }}
